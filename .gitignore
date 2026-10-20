@@ -1,0 +1,10 @@
+.venv/
+venv/
+__pycache__/
+.env
+.idea/
+*.csv
+*.jpg
+*.png
+*.pt
+*.keras
