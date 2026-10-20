@@ -39,28 +39,34 @@ EMG_CLASSES = ['Healthy', 'Neuropathy', 'Myopathy']
 HF_REPO_ID = "BabaYaga1514/healthcare-models"
 
 
+# --- MODEL LOADERS (Single unified definition) ---
 
-
-# Cache Model Loaders
 @st.cache_resource
 def load_skin_model():
     model = models.resnet50(weights=None)
     in_features = model.fc.in_features
     model.fc = nn.Sequential(nn.Dropout(0.4), nn.Linear(in_features, len(SKIN_CLASSES)))
-    path = "skin_resnet50_best.pt"
-    if os.path.exists(path):
-        model.load_state_dict(torch.load(path, map_location='cpu'))
+
+    local_path = "skin_resnet50_best.pt"
+    if os.path.exists(local_path):
+        model_path = local_path
+    else:
+        model_path = hf_hub_download(repo_id=HF_REPO_ID, filename="skin_resnet50_best.pt")
+
+    model.load_state_dict(torch.load(model_path, map_location='cpu'))
     model.eval()
     return model
 
 
 @st.cache_resource
 def load_emg_model():
-    path = "emg_cnn_lstm_best.keras"
-    if os.path.exists(path):
-        return tf.keras.models.load_model(path)
-    return None
+    local_path = "emg_cnn_lstm_best.keras"
+    if os.path.exists(local_path):
+        model_path = local_path
+    else:
+        model_path = hf_hub_download(repo_id=HF_REPO_ID, filename="emg_cnn_lstm_best.keras")
 
+    return tf.keras.models.load_model(model_path)
 
 skin_model = load_skin_model()
 emg_model = load_emg_model()
