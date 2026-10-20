@@ -64,9 +64,17 @@ def load_emg_model():
     if os.path.exists(local_path):
         model_path = local_path
     else:
-        model_path = hf_hub_download(repo_id=HF_REPO_ID, filename="emg_cnn_lstm_best.keras")
+        try:
+            model_path = hf_hub_download(repo_id=HF_REPO_ID, filename="emg_cnn_lstm_best.keras")
+        except Exception as e:
+            st.error(f"Hugging Face Download Error for EMG Model: {e}")
+            return None
 
-    return tf.keras.models.load_model(model_path)
+    try:
+        return tf.keras.models.load_model(model_path)
+    except Exception as e:
+        st.error(f"Failed to load Keras model: {e}")
+        return None
 
 skin_model = load_skin_model()
 emg_model = load_emg_model()
@@ -103,13 +111,13 @@ with tab2:
             signal = np.loadtxt(emg_file, delimiter=',') if emg_file.name.endswith('.csv') else np.load(emg_file)
             st.line_chart(signal[:300])
             if st.button("Run Signal Analysis"):
-                if emg_model:
+                if emg_model is not None:
                     sample = signal[:1000].reshape(1, 1000, 1)
                     preds = emg_model.predict(sample)
                     cls_idx = np.argmax(preds)
                     st.info(f"**Neuromuscular Result:** {EMG_CLASSES[cls_idx]} ({np.max(preds) * 100:.2f}%)")
                 else:
-                    st.error("Model weights file 'emg_cnn_lstm_best.keras' missing from local directory.")
+                    st.error("EMG model is not initialized. Please verify that 'emg_cnn_lstm_best.keras' exists in Hugging Face repo 'BabaYaga1514/healthcare-models'.")
         except Exception as e:
             st.error(f"Error reading signal array: {e}")
 
